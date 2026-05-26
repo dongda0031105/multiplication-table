@@ -91,8 +91,14 @@ def main() -> int:
                 return 1
 
         # ── real component instances ─────────────────────────────────────────
-        data_pipeline  = DataPipeline(_alpaca_client=alpaca_client)
-        risk_guard     = RiskGuard()
+        # DataPipeline uses StockHistoricalDataClient (market data via api_key/secret).
+        # alpaca_client (TradingClient) is used only for account state + order placement.
+        creds = am.get_credentials(account) if not args.dry_run else {}
+        data_pipeline = DataPipeline(
+            api_key=creds.get("key", ""),
+            api_secret=creds.get("secret", ""),
+        )
+        risk_guard = RiskGuard()
 
         adapters = build_adapters(
             data_pipeline=data_pipeline,

@@ -105,12 +105,52 @@ class DataPipelineAdapter:
             "_ranked_df": None,
         }
 
-    @staticmethod
-    def _universe_tickers(strategy: Dict) -> List[str]:
-        """Extract explicit ticker list from strategy JSON if present."""
+    def _universe_tickers(self, strategy: Dict) -> List[str]:
+        """
+        Build ticker list from strategy universe config.
+        If include_symbols is non-empty, use that.
+        Otherwise fetch tradeable NASDAQ/NYSE assets from Alpaca (capped at 100),
+        falling back to a hardcoded large-cap list when Alpaca is unavailable.
+        """
         universe = strategy.get("universe", strategy.get("strategy", {}).get("universe", {}))
         include = universe.get("include_symbols", [])
-        return include if include else []
+        if include:
+            return include
+
+        # Try Alpaca asset list
+        if self._alpaca:
+            try:
+                from alpaca.trading.requests import GetAssetsRequest
+                from alpaca.trading.enums import AssetClass, AssetStatus
+                req = GetAssetsRequest(
+                    asset_class=AssetClass.US_EQUITY,
+                    status=AssetStatus.ACTIVE,
+                )
+                assets = self._alpaca.get_all_assets(req)
+                exchanges = set(universe.get("exchanges", ["NASDAQ", "NYSE"]))
+                tickers = [
+                    a.symbol for a in assets
+                    if a.exchange in exchanges
+                    and a.tradable
+                    and "." not in a.symbol   # skip ADRs/special
+                    and len(a.symbol) <= 5
+                ]
+                log.info("Universe from Alpaca: %d tickers", len(tickers))
+                return tickers[:200]          # cap to avoid slow fetches
+            except Exception as exc:
+                log.warning("Could not fetch Alpaca asset list: %s — using fallback", exc)
+
+        # Hardcoded large-cap fallback (all NASDAQ/NYSE, market-cap > $20B)
+        return [
+            "AAPL","MSFT","NVDA","AMZN","GOOGL","META","TSLA","AVGO","NFLX","CRM",
+            "AMD","INTC","QCOM","TXN","AMAT","MU","LRCX","KLAC","SNPS","CDNS",
+            "NOW","ADBE","INTU","PANW","CRWD","FTNT","ZS","OKTA","DDOG","SNOW",
+            "UBER","LYFT","ABNB","BKNG","EXPE","DASH","SHOP","SQ","PYPL","MA",
+            "V","JPM","BAC","WFC","GS","MS","BLK","SPGI","ICE","CME",
+            "UNH","ABBV","LLY","JNJ","MRK","PFE","AMGN","GILD","BIIB","VRTX",
+            "XOM","CVX","COP","SLB","HAL","OXY","EOG","PXD","MPC","VLO",
+            "HD","LOW","TGT","WMT","COST","AMZN","TJX","ROST","ULTA","EL",
+        ]
 
     @staticmethod
     def _prev_close(df: Optional[pd.DataFrame], n_days: int) -> Optional[float]:
