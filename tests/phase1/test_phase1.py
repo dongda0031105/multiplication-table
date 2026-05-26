@@ -344,12 +344,12 @@ class TestTC106SecretsNotLeaked:
 
         am = AccountManager(str(accounts_file))
         acc = am.get_account("acc_001")
-        key, secret = am.get_credentials(acc)
+        creds = am.get_credentials(acc)
 
-        assert key == "RESOLVED_KEY"
-        assert secret == "RESOLVED_SECRET"
+        assert creds["key"] == "RESOLVED_KEY"
+        assert creds["secret"] == "RESOLVED_SECRET"
         # The raw value stored in JSON ("TEST_ALPACA_KEY") must NOT be the resolved key
-        assert acc["alpaca_key_env"] != key
+        assert acc["alpaca_key_env"] != creds["key"]
 
     def test_log_output_does_not_contain_secret_value(self, accounts_file, monkeypatch, caplog):
         """When verify_connection is called, the actual key must not appear in logs."""

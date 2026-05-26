@@ -64,6 +64,10 @@ class AccountManager:
     def all_account_ids(self) -> List[str]:
         return [acc["id"] for acc in self.accounts]
 
+    def list_accounts(self) -> List[Dict]:
+        """Return full account dicts (used by E2ERunner and CLI scripts)."""
+        return list(self.accounts)
+
     def get_account(self, account_id: str) -> Optional[Dict]:
         for acc in self.accounts:
             if acc["id"] == account_id:
@@ -97,8 +101,8 @@ class AccountManager:
 
     # ── Alpaca connection ─────────────────────────────────────────────────────
 
-    def get_credentials(self, account: Dict) -> tuple[str, str]:
-        """Resolve env-var references to actual API key/secret strings."""
+    def get_credentials(self, account: Dict) -> Dict[str, str]:
+        """Resolve env-var references; return {"key": ..., "secret": ...}."""
         key_env = account.get("alpaca_key_env", "")
         secret_env = account.get("alpaca_secret_env", "")
 
@@ -110,14 +114,15 @@ class AccountManager:
                 f"Missing credentials for account '{account['id']}': "
                 f"env vars '{key_env}' / '{secret_env}' not set"
             )
-        return api_key, api_secret
+        return {"key": api_key, "secret": api_secret}
 
     def verify_connection(self, account: Dict) -> bool:
         """
         Call GET /v2/account to confirm the Alpaca key is valid.
         Returns True on success; raises AuthError on 401.
         """
-        api_key, api_secret = self.get_credentials(account)
+        creds = self.get_credentials(account)
+        api_key, api_secret = creds["key"], creds["secret"]
         paper = account.get("paper_trading", True)
         base_url = ALPACA_BASE_URL_PAPER if paper else ALPACA_BASE_URL_LIVE
 

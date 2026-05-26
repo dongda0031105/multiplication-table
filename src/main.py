@@ -14,10 +14,17 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 from account_manager import AccountManager, ConfigError, AuthError
 from dashboard_builder import DashboardBuilder
+from data_pipeline import DataPipeline
+from derived_factor_engine import DerivedFactorEngine
 from e2e_runner import E2ERunner, PipelineError
 from execution_engine import ExecutionEngine
+from filter_engine import FilterEngine
+from indicator_engine import IndicatorEngine
 from notifier import Notifier
+from pipeline_adapter import build_adapters
+from ranking_engine import RankingEngine
 from report_generator import ReportModel, ReportView
+from signal_engine import RiskGuard, SignalEngine
 from strategy_loader import StrategyLoader, SchemaError
 
 logging.basicConfig(
@@ -39,23 +46,17 @@ def parse_args() -> argparse.Namespace:
     return p.parse_args()
 
 
-class _AlpacaAccountManager:
-    """Thin adapter so E2ERunner can call list_accounts() / get_credentials()."""
-
+class _AccountManagerAdapter:
+    """Thin wrapper so E2ERunner can call list_accounts()."""
     def __init__(self, am: AccountManager):
         self._am = am
-
     def list_accounts(self):
         return self._am.list_accounts()
 
-    def get_credentials(self, account):
-        return self._am.get_credentials(account)
 
-
-class _AlpacaStrategyLoader:
+class _StrategyLoaderAdapter:
     def __init__(self, sl: StrategyLoader):
         self._sl = sl
-
     def load(self, strategy_id: str):
         return self._sl.load(strategy_id)
 
@@ -73,7 +74,7 @@ def main() -> int:
         sl = StrategyLoader(args.strategies_dir)
         notifier = Notifier()
 
-        # Build Alpaca client (skipped in dry-run / when credentials absent)
+        # ── Alpaca client ─────────────────────────────────────────────────────
         alpaca_client = None
         if not args.dry_run:
             try:
@@ -84,10 +85,26 @@ def main() -> int:
                     secret_key=creds["secret"],
                     paper=account.get("paper_trading", True),
                 )
-                log.info("Alpaca client initialised (paper=%s)", account.get("paper_trading", True))
+                log.info("Alpaca client ready (paper=%s)", account.get("paper_trading", True))
             except Exception as exc:
-                log.error("Could not create Alpaca client: %s", exc)
+                log.error("Alpaca client init failed: %s", exc)
                 return 1
+
+        # ── real component instances ─────────────────────────────────────────
+        data_pipeline  = DataPipeline(_alpaca_client=alpaca_client)
+        risk_guard     = RiskGuard()
+
+        adapters = build_adapters(
+            data_pipeline=data_pipeline,
+            indicator_engine=IndicatorEngine(),
+            derived_factor_engine=DerivedFactorEngine(),
+            filter_engine=FilterEngine(),
+            ranking_engine=RankingEngine(),
+            signal_engine=SignalEngine(),
+            alpaca_client=alpaca_client,
+        )
+        # inject risk_guard into signal adapter
+        adapters["signal_engine"]._rg = risk_guard
 
         exec_engine = ExecutionEngine(
             alpaca_client=alpaca_client,
@@ -97,8 +114,13 @@ def main() -> int:
         )
 
         runner = E2ERunner(
-            account_manager=_AlpacaAccountManager(am),
-            strategy_loader=_AlpacaStrategyLoader(sl),
+            account_manager=_AccountManagerAdapter(am),
+            strategy_loader=_StrategyLoaderAdapter(sl),
+            data_pipeline=adapters["data_pipeline"],
+            indicator_engine=adapters["indicator_engine"],
+            filter_engine=adapters["filter_engine"],
+            ranking_engine=adapters["ranking_engine"],
+            signal_engine=adapters["signal_engine"],
             execution_engine=exec_engine,
             report_model=ReportModel(reports_dir=args.reports_dir),
             report_view=ReportView(template_dir="dashboard/templates"),
@@ -113,9 +135,8 @@ def main() -> int:
         result = runner.run(args.account)
         orders = result.get("orders", [])
         log.info(
-            "Pipeline complete — %d orders placed (dry_run=%s)",
-            len(orders),
-            args.dry_run,
+            "Done — %d orders placed, dry_run=%s, steps=%s",
+            len(orders), args.dry_run, runner.steps_completed,
         )
         return 0
 
