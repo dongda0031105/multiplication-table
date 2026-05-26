@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Daily Report — {{ report.date }} — {{ report.account_id }}</title>
+<style>
+  body { font-family: system-ui, sans-serif; background: #0d1117; color: #c9d1d9; margin: 0; padding: 1rem 2rem; }
+  h1, h2 { color: #58a6ff; }
+  table { border-collapse: collapse; width: 100%; margin-bottom: 1.5rem; }
+  th, td { border: 1px solid #30363d; padding: 6px 12px; text-align: right; }
+  th { background: #161b22; color: #8b949e; text-align: center; }
+  td:first-child { text-align: left; }
+  .pos { color: #3fb950; }
+  .neg { color: #f85149; }
+  .card { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 1rem; margin-bottom: 1rem; display: inline-block; min-width: 150px; margin-right: 1rem; }
+  .card .label { font-size: 0.75rem; color: #8b949e; }
+  .card .value { font-size: 1.4rem; font-weight: bold; }
+  .disclaimer { color: #8b949e; font-size: 0.8rem; border-top: 1px solid #30363d; padding-top: 1rem; margin-top: 2rem; }
+</style>
+</head>
+<body>
+
+<h1>Daily Report — {{ report.date }}</h1>
+<p style="color:#8b949e">Account: {{ report.account_id }} &nbsp;|&nbsp; Generated: {{ report.generated_at }}</p>
+
+<div>
+  <div class="card">
+    <div class="label">NAV</div>
+    <div class="value">${{ "{:,.2f}".format(report.nav) }}</div>
+  </div>
+  <div class="card">
+    <div class="label">Cash</div>
+    <div class="value">${{ "{:,.2f}".format(report.cash) }}</div>
+  </div>
+  <div class="card">
+    <div class="label">Invested</div>
+    <div class="value">${{ "{:,.2f}".format(report.invested_value) }}</div>
+  </div>
+  <div class="card">
+    <div class="label">Drawdown</div>
+    <div class="value {{ 'neg' if report.drawdown_pct > 0 else '' }}">{{ "%.2f"|format(report.drawdown_pct * 100) }}%</div>
+  </div>
+</div>
+
+{% if report.benchmark %}
+<h2>Benchmark (1D)</h2>
+<div>
+  {% for key, val in report.benchmark.items() %}
+  <div class="card">
+    <div class="label">{{ key.upper() }}</div>
+    <div class="value {{ 'pos' if val and val > 0 else 'neg' if val and val < 0 else '' }}">
+      {{ "%+.2f"|format(val * 100) if val is not none else "N/A" }}%
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+{% if report.positions %}
+<h2>Holdings</h2>
+<table>
+  <tr><th>Ticker</th><th>Shares</th><th>Price</th><th>Value</th><th>% NAV</th><th>P/E</th><th>1D</th><th>1W</th><th>1M</th></tr>
+  {% for p in report.positions %}
+  <tr>
+    <td>{{ p.ticker }}</td>
+    <td>{{ p.shares }}</td>
+    <td>${{ "%.2f"|format(p.price) }}</td>
+    <td>${{ "{:,.2f}".format(p.value) }}</td>
+    <td>{{ "%.1f"|format(p.pct_of_nav * 100) }}%</td>
+    <td>{{ "%.1f"|format(p.pe_ratio) if p.pe_ratio else "—" }}</td>
+    <td class="{{ 'pos' if p.return_1d and p.return_1d > 0 else 'neg' if p.return_1d and p.return_1d < 0 else '' }}">
+      {{ "%+.2f"|format(p.return_1d * 100) if p.return_1d is not none else "N/A" }}%
+    </td>
+    <td class="{{ 'pos' if p.return_1w and p.return_1w > 0 else 'neg' if p.return_1w and p.return_1w < 0 else '' }}">
+      {{ "%+.2f"|format(p.return_1w * 100) if p.return_1w is not none else "N/A" }}%
+    </td>
+    <td class="{{ 'pos' if p.return_1m and p.return_1m > 0 else 'neg' if p.return_1m and p.return_1m < 0 else '' }}">
+      {{ "%+.2f"|format(p.return_1m * 100) if p.return_1m is not none else "N/A" }}%
+    </td>
+  </tr>
+  {% endfor %}
+</table>
+{% endif %}
+
+{% if report.trades %}
+<h2>Today's Trades</h2>
+<table>
+  <tr><th>Ticker</th><th>Side</th><th>Shares</th><th>Price</th><th>Value</th><th>Status</th></tr>
+  {% for t in report.trades %}
+  <tr>
+    <td>{{ t.ticker }}</td>
+    <td class="{{ 'pos' if t.side == 'buy' else 'neg' }}">{{ t.side.upper() }}</td>
+    <td>{{ t.shares }}</td>
+    <td>${{ "%.2f"|format(t.price) }}</td>
+    <td>${{ "{:,.2f}".format(t.value) }}</td>
+    <td>{{ t.status }}</td>
+  </tr>
+  {% endfor %}
+</table>
+{% endif %}
+
+{% if report.top10 %}
+<h2>Top-10 Ranked Stocks</h2>
+<table>
+  <tr><th>Rank</th><th>Ticker</th><th>Score</th><th>P/E</th><th>Momentum 90D</th><th>Price</th></tr>
+  {% for s in report.top10 %}
+  <tr>
+    <td>{{ s.rank }}</td>
+    <td>{{ s.ticker }}</td>
+    <td>{{ "%.1f"|format(s.score) }}</td>
+    <td>{{ "%.1f"|format(s.pe_ratio) if s.pe_ratio else "—" }}</td>
+    <td class="{{ 'pos' if s.momentum_90d and s.momentum_90d > 0 else 'neg' if s.momentum_90d and s.momentum_90d < 0 else '' }}">
+      {{ "%+.1f"|format(s.momentum_90d * 100) if s.momentum_90d is not none else "N/A" }}%
+    </td>
+    <td>${{ "%.2f"|format(s.price) if s.get('price') else "—" }}</td>
+  </tr>
+  {% endfor %}
+</table>
+{% endif %}
+
+{% if report.watchlist %}
+<h2>Watchlist</h2>
+{% for category, tickers in report.watchlist.items() %}
+<h3 style="color:#e3b341">{{ category }}</h3>
+<p>{{ tickers | join(", ") }}</p>
+{% endfor %}
+{% endif %}
+
+<div class="disclaimer">{{ report.risk_disclaimer }}</div>
+</body>
+</html>
