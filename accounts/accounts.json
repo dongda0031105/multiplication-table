@@ -9,7 +9,7 @@
       "active_strategy_id": "toprank_ma_momentum_v2",
       "strategy_start_date": "2025-01-01",
       "strategy_history": [],
-      "notify_email": "",
+      "notify_email": "a4190222@gmail.com",
       "watchlist_categories": {
         "AI & Chips": ["NVDA", "AMD", "INTC", "AVGO", "QCOM"],
         "Cloud": ["MSFT", "AMZN", "GOOGL", "CRM", "NOW"],
