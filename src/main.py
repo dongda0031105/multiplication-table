@@ -1,19 +1,23 @@
 """
-Entry point — called by GitHub Actions for each account.
+Entry point — called by GitHub Actions trade-execute.yml for each account.
 
 Usage:
     python src/main.py --account acc_001
     python src/main.py --account acc_001 --dry-run
 """
 import argparse
-import sys
 import logging
+import sys
 from pathlib import Path
 
-# Allow `python src/main.py` from repo root
 sys.path.insert(0, str(Path(__file__).parent))
 
 from account_manager import AccountManager, ConfigError, AuthError
+from dashboard_builder import DashboardBuilder
+from e2e_runner import E2ERunner, PipelineError
+from execution_engine import ExecutionEngine
+from notifier import Notifier
+from report_generator import ReportModel, ReportView
 from strategy_loader import StrategyLoader, SchemaError
 
 logging.basicConfig(
@@ -27,51 +31,102 @@ log = logging.getLogger(__name__)
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(description="Alpaca auto-trading engine")
     p.add_argument("--account", required=True, help="Account ID from accounts.json")
-    p.add_argument("--dry-run", action="store_true", help="Validate config only, no orders")
-    p.add_argument(
-        "--accounts-path", default="accounts/accounts.json",
-        help="Path to accounts.json"
-    )
-    p.add_argument(
-        "--strategies-dir", default="strategies",
-        help="Directory containing strategy JSON files"
-    )
+    p.add_argument("--dry-run", action="store_true", help="Validate only, no orders")
+    p.add_argument("--accounts-path", default="accounts/accounts.json")
+    p.add_argument("--strategies-dir", default="strategies")
+    p.add_argument("--reports-dir", default="reports")
+    p.add_argument("--docs-dir", default="docs")
     return p.parse_args()
+
+
+class _AlpacaAccountManager:
+    """Thin adapter so E2ERunner can call list_accounts() / get_credentials()."""
+
+    def __init__(self, am: AccountManager):
+        self._am = am
+
+    def list_accounts(self):
+        return self._am.list_accounts()
+
+    def get_credentials(self, account):
+        return self._am.get_credentials(account)
+
+
+class _AlpacaStrategyLoader:
+    def __init__(self, sl: StrategyLoader):
+        self._sl = sl
+
+    def load(self, strategy_id: str):
+        return self._sl.load(strategy_id)
 
 
 def main() -> int:
     args = parse_args()
 
     try:
-        log.info("Loading account config: %s", args.account)
         am = AccountManager(args.accounts_path)
         account = am.get_account(args.account)
         if account is None:
-            log.error("Account '%s' not found in accounts.json", args.account)
+            log.error("Account '%s' not found", args.account)
             return 1
 
-        log.info("Loading strategy: %s", account["active_strategy_id"])
         sl = StrategyLoader(args.strategies_dir)
-        strategy = sl.load(account["active_strategy_id"])
-        log.info(
-            "Strategy loaded: %s (enabled=%s)",
-            strategy["strategy"]["name"],
-            strategy["strategy"]["enabled"],
+        notifier = Notifier()
+
+        # Build Alpaca client (skipped in dry-run / when credentials absent)
+        alpaca_client = None
+        if not args.dry_run:
+            try:
+                creds = am.get_credentials(account)
+                from alpaca.trading.client import TradingClient
+                alpaca_client = TradingClient(
+                    api_key=creds["key"],
+                    secret_key=creds["secret"],
+                    paper=account.get("paper_trading", True),
+                )
+                log.info("Alpaca client initialised (paper=%s)", account.get("paper_trading", True))
+            except Exception as exc:
+                log.error("Could not create Alpaca client: %s", exc)
+                return 1
+
+        exec_engine = ExecutionEngine(
+            alpaca_client=alpaca_client,
+            notifier=notifier,
+            max_attempts=3,
+            backoff_seconds=5.0,
         )
 
-        if not args.dry_run:
-            log.info("Verifying Alpaca connection for account: %s", args.account)
-            am.verify_connection(account)
-            log.info("Alpaca connection OK")
+        runner = E2ERunner(
+            account_manager=_AlpacaAccountManager(am),
+            strategy_loader=_AlpacaStrategyLoader(sl),
+            execution_engine=exec_engine,
+            report_model=ReportModel(reports_dir=args.reports_dir),
+            report_view=ReportView(template_dir="dashboard/templates"),
+            dashboard_builder=DashboardBuilder(
+                reports_dir=args.reports_dir,
+                output_dir=args.docs_dir,
+            ),
+            notifier=notifier,
+            dry_run=args.dry_run,
+        )
 
-        log.info("Phase 1 health check passed for account: %s", args.account)
+        result = runner.run(args.account)
+        orders = result.get("orders", [])
+        log.info(
+            "Pipeline complete — %d orders placed (dry_run=%s)",
+            len(orders),
+            args.dry_run,
+        )
         return 0
 
-    except (ConfigError, SchemaError) as e:
-        log.error("Configuration error: %s", e)
+    except (ConfigError, SchemaError) as exc:
+        log.error("Configuration error: %s", exc)
         return 1
-    except AuthError as e:
-        log.error("Authentication error: %s", e)
+    except AuthError as exc:
+        log.error("Authentication error: %s", exc)
+        return 1
+    except PipelineError as exc:
+        log.error("Pipeline error: %s", exc)
         return 1
 
 
