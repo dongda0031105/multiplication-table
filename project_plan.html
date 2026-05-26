@@ -1,0 +1,1532 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Alpaca Auto-Trading System — 專案開發計劃</title>
+  <style>
+    :root {
+      --bg: #0d1117;
+      --surface: #161b22;
+      --surface2: #21262d;
+      --border: #30363d;
+      --text: #e6edf3;
+      --muted: #8b949e;
+      --green: #3fb950;
+      --blue: #58a6ff;
+      --yellow: #d29922;
+      --red: #f85149;
+      --purple: #bc8cff;
+      --orange: #ffa657;
+      --teal: #39d353;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      font-size: 14px;
+    }
+    a { color: var(--blue); text-decoration: none; }
+    h1, h2, h3, h4 { font-weight: 600; }
+
+    /* ── Header ── */
+    .hero {
+      background: linear-gradient(135deg, #0d1117 0%, #161b22 50%, #0d2137 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 48px 40px 36px;
+    }
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(88,166,255,.15); border: 1px solid rgba(88,166,255,.3);
+      border-radius: 20px; padding: 4px 12px; font-size: 12px; color: var(--blue);
+      margin-bottom: 16px;
+    }
+    .hero h1 { font-size: 32px; margin-bottom: 8px; }
+    .hero h1 span { color: var(--blue); }
+    .hero p { color: var(--muted); font-size: 15px; max-width: 720px; }
+    .meta-row {
+      display: flex; gap: 24px; margin-top: 20px; flex-wrap: wrap;
+    }
+    .meta-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
+    .dot { width: 8px; height: 8px; border-radius: 50%; }
+    .dot-green { background: var(--green); }
+    .dot-blue { background: var(--blue); }
+    .dot-yellow { background: var(--yellow); }
+
+    /* ── Layout ── */
+    .container { max-width: 1280px; margin: 0 auto; padding: 32px 40px; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+    @media(max-width: 900px) {
+      .grid-2, .grid-3 { grid-template-columns: 1fr; }
+      .container { padding: 20px 16px; }
+      .hero { padding: 28px 16px; }
+    }
+
+    /* ── Cards ── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 20px;
+    }
+    .card-title {
+      font-size: 13px; font-weight: 600; color: var(--muted);
+      text-transform: uppercase; letter-spacing: .05em;
+      margin-bottom: 14px;
+    }
+    .section { margin-bottom: 40px; }
+    .section-header {
+      display: flex; align-items: center; gap: 10px;
+      margin-bottom: 20px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+    }
+    .section-header h2 { font-size: 20px; }
+    .icon-badge {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 32px; height: 32px; border-radius: 8px; font-size: 16px;
+    }
+    .ib-blue { background: rgba(88,166,255,.15); }
+    .ib-green { background: rgba(63,185,80,.15); }
+    .ib-yellow { background: rgba(210,153,34,.15); }
+    .ib-purple { background: rgba(188,140,255,.15); }
+    .ib-orange { background: rgba(255,166,87,.15); }
+    .ib-red { background: rgba(248,81,73,.15); }
+    .ib-teal { background: rgba(57,211,83,.15); }
+
+    /* ── Phase blocks ── */
+    .phase {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      margin-bottom: 24px;
+    }
+    .phase-header {
+      display: flex; align-items: center; gap: 14px;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+    }
+    .phase-num {
+      width: 36px; height: 36px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 15px; flex-shrink: 0;
+    }
+    .phase-body { padding: 20px; background: var(--surface); }
+    .phase-meta {
+      display: flex; gap: 16px; flex-wrap: wrap;
+      font-size: 12px; color: var(--muted); margin-bottom: 14px;
+    }
+    .phase-meta span { display: flex; align-items: center; gap: 4px; }
+
+    /* color themes per phase */
+    .ph1 .phase-header { background: rgba(88,166,255,.06); }
+    .ph1 .phase-num { background: rgba(88,166,255,.2); color: var(--blue); }
+    .ph2 .phase-header { background: rgba(63,185,80,.06); }
+    .ph2 .phase-num { background: rgba(63,185,80,.2); color: var(--green); }
+    .ph3 .phase-header { background: rgba(210,153,34,.06); }
+    .ph3 .phase-num { background: rgba(210,153,34,.2); color: var(--yellow); }
+    .ph4 .phase-header { background: rgba(188,140,255,.06); }
+    .ph4 .phase-num { background: rgba(188,140,255,.2); color: var(--purple); }
+    .ph5 .phase-header { background: rgba(255,166,87,.06); }
+    .ph5 .phase-num { background: rgba(255,166,87,.2); color: var(--orange); }
+    .ph6 .phase-header { background: rgba(57,211,83,.06); }
+    .ph6 .phase-num { background: rgba(57,211,83,.2); color: var(--teal); }
+    .ph7 .phase-header { background: rgba(248,81,73,.06); }
+    .ph7 .phase-num { background: rgba(248,81,73,.2); color: var(--red); }
+
+    /* ── Sub-sections within phase ── */
+    .sub-section { margin-top: 16px; }
+    .sub-title {
+      font-size: 12px; font-weight: 600; color: var(--muted);
+      text-transform: uppercase; letter-spacing: .04em;
+      margin-bottom: 8px; display: flex; align-items: center; gap: 6px;
+    }
+
+    /* ── Lists ── */
+    ul.plain { list-style: none; }
+    ul.plain li {
+      padding: 5px 0; border-bottom: 1px solid rgba(48,54,61,.5);
+      font-size: 13px; display: flex; align-items: flex-start; gap: 8px;
+    }
+    ul.plain li:last-child { border-bottom: none; }
+    ul.plain li::before { content: "▸"; color: var(--muted); flex-shrink: 0; margin-top: 1px; }
+
+    /* test cases */
+    .test-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    @media(max-width: 700px) { .test-grid { grid-template-columns: 1fr; } }
+    .test-item {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--green);
+      border-radius: 6px;
+      padding: 10px 12px;
+      font-size: 12px;
+    }
+    .test-item .tc-id {
+      font-size: 10px; color: var(--muted); font-family: monospace;
+      margin-bottom: 4px;
+    }
+    .test-item .tc-name { font-weight: 600; margin-bottom: 3px; }
+    .test-item .tc-desc { color: var(--muted); font-size: 11px; }
+
+    /* ── Architecture diagram ── */
+    .arch-box {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 24px;
+      font-family: "SF Mono", "Fira Code", Consolas, monospace;
+      font-size: 12px;
+      overflow-x: auto;
+    }
+    .arch-box pre { color: var(--text); line-height: 1.7; white-space: pre; }
+
+    /* ── Tag pills ── */
+    .tag {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 500;
+    }
+    .tag-blue { background: rgba(88,166,255,.15); color: var(--blue); border: 1px solid rgba(88,166,255,.3); }
+    .tag-green { background: rgba(63,185,80,.15); color: var(--green); border: 1px solid rgba(63,185,80,.3); }
+    .tag-yellow { background: rgba(210,153,34,.15); color: var(--yellow); border: 1px solid rgba(210,153,34,.3); }
+    .tag-purple { background: rgba(188,140,255,.15); color: var(--purple); border: 1px solid rgba(188,140,255,.3); }
+    .tag-orange { background: rgba(255,166,87,.15); color: var(--orange); border: 1px solid rgba(255,166,87,.3); }
+    .tag-red { background: rgba(248,81,73,.15); color: var(--red); border: 1px solid rgba(248,81,73,.3); }
+
+    /* ── Schema table ── */
+    .schema-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .schema-table th {
+      background: var(--surface2); padding: 8px 12px;
+      text-align: left; font-size: 11px; color: var(--muted);
+      text-transform: uppercase; letter-spacing: .04em;
+      border-bottom: 1px solid var(--border);
+    }
+    .schema-table td {
+      padding: 8px 12px; border-bottom: 1px solid rgba(48,54,61,.5);
+      vertical-align: top;
+    }
+    .schema-table tr:last-child td { border-bottom: none; }
+    .schema-table tr:hover td { background: rgba(255,255,255,.02); }
+    .mono { font-family: "SF Mono", Consolas, monospace; color: var(--orange); }
+    .mono-s { font-family: "SF Mono", Consolas, monospace; color: var(--purple); }
+
+    /* ── Timeline ── */
+    .timeline { position: relative; padding-left: 28px; }
+    .timeline::before {
+      content: "";
+      position: absolute; left: 8px; top: 6px; bottom: 6px;
+      width: 2px; background: var(--border);
+    }
+    .tl-item { position: relative; margin-bottom: 18px; }
+    .tl-dot {
+      position: absolute; left: -24px; top: 4px;
+      width: 12px; height: 12px; border-radius: 50%;
+      border: 2px solid var(--bg);
+    }
+    .tl-item h4 { font-size: 13px; margin-bottom: 3px; }
+    .tl-item p { font-size: 12px; color: var(--muted); }
+
+    /* ── Stack ── */
+    .stack-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 0; border-bottom: 1px solid rgba(48,54,61,.5);
+    }
+    .stack-item:last-child { border-bottom: none; }
+    .stack-icon { font-size: 18px; width: 28px; text-align: center; }
+    .stack-name { font-weight: 600; font-size: 13px; }
+    .stack-desc { font-size: 12px; color: var(--muted); }
+
+    /* ── Risk banner ── */
+    .risk-banner {
+      background: rgba(248,81,73,.08);
+      border: 1px solid rgba(248,81,73,.3);
+      border-radius: 8px;
+      padding: 14px 18px;
+      font-size: 13px;
+      color: #ffb3b0;
+      display: flex; gap: 10px; align-items: flex-start;
+    }
+    .risk-banner .ri { font-size: 18px; flex-shrink: 0; }
+
+    /* ── Divider ── */
+    hr { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
+
+    /* ── TOC nav ── */
+    .toc {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px 20px;
+      margin-bottom: 32px;
+    }
+    .toc h3 { font-size: 13px; color: var(--muted); margin-bottom: 10px; text-transform: uppercase; letter-spacing: .05em; }
+    .toc-list { display: flex; flex-wrap: wrap; gap: 8px; }
+    .toc-list a {
+      display: inline-block; padding: 4px 10px;
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 6px; font-size: 12px; color: var(--text);
+      transition: border-color .15s;
+    }
+    .toc-list a:hover { border-color: var(--blue); color: var(--blue); }
+
+    /* ── Cols inside card ── */
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    @media(max-width: 600px) { .two-col { grid-template-columns: 1fr; } }
+
+    .badge-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+  </style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════════
+     HERO
+════════════════════════════════════════════ -->
+<header class="hero">
+  <div class="hero-badge">&#9881; Python Software Development Plan v1.0</div>
+  <h1>Alpaca <span>Auto-Trading</span> System</h1>
+  <p>全雲端、多帳戶、策略 JSON 驅動的美股自動交易暨報告平台 ─ Dashboard 以 GitHub Pages 呈現，所有排程皆透過 GitHub Actions 執行，零本地機器依賴。</p>
+  <div class="meta-row">
+    <div class="meta-item"><span class="dot dot-green"></span> 全雲端執行</div>
+    <div class="meta-item"><span class="dot dot-blue"></span> 多帳戶支援</div>
+    <div class="meta-item"><span class="dot dot-yellow"></span> 策略以 JSON 描述</div>
+    <div class="meta-item">&#128197; 預估總工期：14–18 週</div>
+    <div class="meta-item">&#127981; 7 個開發階段</div>
+    <div class="meta-item">&#9989; 每階段含完整 Test Cases</div>
+  </div>
+</header>
+
+<div class="container">
+
+  <!-- TOC -->
+  <nav class="toc">
+    <h3>目錄</h3>
+    <div class="toc-list">
+      <a href="#overview">系統總覽</a>
+      <a href="#arch">架構設計</a>
+      <a href="#schema">策略 JSON Schema</a>
+      <a href="#stack">技術堆疊</a>
+      <a href="#phase1">Phase 1 基礎建設</a>
+      <a href="#phase2">Phase 2 資料管線</a>
+      <a href="#phase3">Phase 3 策略引擎</a>
+      <a href="#phase4">Phase 4 自動交易</a>
+      <a href="#phase5">Phase 5 報告系統</a>
+      <a href="#phase6">Phase 6 Dashboard</a>
+      <a href="#phase7">Phase 7 整合上線</a>
+      <a href="#timeline">開發時程</a>
+      <a href="#risks">風險提示</a>
+    </div>
+  </nav>
+
+  <!-- ══ SYSTEM OVERVIEW ══ -->
+  <section class="section" id="overview">
+    <div class="section-header">
+      <div class="icon-badge ib-blue">&#128202;</div>
+      <h2>系統總覽</h2>
+    </div>
+
+    <div class="grid-3" style="margin-bottom:20px">
+      <div class="card">
+        <div class="card-title">核心功能</div>
+        <ul class="plain">
+          <li>Alpaca API 自動下單（整數股）</li>
+          <li>每日盈虧報告（JSON Model + HTML View 分離）</li>
+          <li>每日上午 6:00 Email 通知</li>
+          <li>有交易即時 Email 推播</li>
+          <li>NASDAQ / NYSE 前十強排名</li>
+          <li>隔日十檔預測（策略評分）</li>
+          <li>個股本益比（P/E Ratio）每日計算</li>
+          <li>NAV 線圖 vs NASDAQ / S&amp;P 500</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="card-title">帳戶 &amp; 策略管理</div>
+        <ul class="plain">
+          <li>多帳戶支援，同一帳戶同一時間僅用一策略</li>
+          <li>帳戶可隨時切換策略（JSON only）</li>
+          <li>新策略只需新增 JSON，不修改 Python 代碼</li>
+          <li>每月初 + 新資金進入時自動再平衡</li>
+          <li>每檔持倉上限 10%，只買整數股</li>
+          <li>GitHub Actions 統一走遍所有帳戶執行交易</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="card-title">Dashboard &amp; 報告</div>
+        <ul class="plain">
+          <li>GitHub Pages 靜態 Dashboard（零費用）</li>
+          <li>現金水位 / 持倉清單 / 1d・1w・1m 獲利 %</li>
+          <li>回撤 &amp; NAV 線圖含 NASDAQ / SP500 比對（可勾選）</li>
+          <li>三大關注類別股票顯示</li>
+          <li>歷史報告儲存於 GitHub Repo，客戶可回查</li>
+          <li>報告 Model 以 JSON 儲存，View 為靜態 HTML</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="risk-banner">
+      <span class="ri">⚠️</span>
+      <span><strong>投資風險提示：</strong>本系統所有排名、績效說明及通知文案，均<strong>僅供資訊整理與研究參考，不構成投資建議</strong>。股票投資有風險，過去績效不代表未來獲利。請在充分了解個人風險承受能力後謹慎操作。</span>
+    </div>
+  </section>
+
+  <!-- ══ ARCHITECTURE ══ -->
+  <section class="section" id="arch">
+    <div class="section-header">
+      <div class="icon-badge ib-purple">&#128268;</div>
+      <h2>系統架構設計</h2>
+    </div>
+
+    <div class="arch-box">
+      <pre>
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│                         GITHUB ACTIONS  (全雲端排程中樞)                          │
+│                                                                                 │
+│  ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────────────────┐  │
+│  │  daily-report.yml│  │ trade-execute.yml│  │  rebalance.yml               │  │
+│  │  每日 06:00 UTC-5│  │  盤中即時觸發    │  │  每月初 + 新資金事件         │  │
+│  │  生成 JSON Model │  │  走遍所有帳戶    │  │  依持倉差異再平衡            │  │
+│  └────────┬─────────┘  └────────┬─────────┘  └──────────────┬───────────────┘  │
+│           │                     │                             │                 │
+│           └─────────────────────┴─────────────────────────────┘                │
+│                                 │                                               │
+└─────────────────────────────────┼───────────────────────────────────────────────┘
+                                  │
+          ┌───────────────────────┴──────────────────────────────┐
+          │                   PYTHON CORE ENGINE                  │
+          │                                                        │
+          │  ┌─────────────────────────────────────────────────┐  │
+          │  │  Account Manager (multi-account)                │  │
+          │  │  accounts.json → 帳戶清單 + 每帳戶指定策略 ID   │  │
+          │  └──────────────┬──────────────────────────────────┘  │
+          │                 │  讀取                                │
+          │  ┌──────────────▼──────────────────────────────────┐  │
+          │  │  Strategy Loader                                 │  │
+          │  │  strategies/*.json  (schema v2)                  │  │
+          │  │  只需新增 JSON 即可新增策略                       │  │
+          │  └──────────────┬──────────────────────────────────┘  │
+          │                 │                                      │
+          │  ┌──────────────▼──────────────────────────────────┐  │
+          │  │  Data Pipeline                                   │  │
+          │  │  Alpaca Market Data + yfinance fundamentals      │  │
+          │  │  指標計算 (SMA/EMA/RSI/MACD/ADX/ATR/BB…)        │  │
+          │  └──────────────┬──────────────────────────────────┘  │
+          │                 │                                      │
+          │  ┌──────────────▼──────────────────────────────────┐  │
+          │  │  Signal Engine                                   │  │
+          │  │  Filter → Rank → Entry/Exit Signal               │  │
+          │  │  Top-10 Prediction + P/E Ratio 計算              │  │
+          │  └──────────────┬──────────────────────────────────┘  │
+          │                 │                                      │
+          │  ┌──────────────▼──────────────────────────────────┐  │
+          │  │  Execution Engine                                │  │
+          │  │  Alpaca REST API → 市價單 / 整數股 / 重試        │  │
+          │  │  即時交易通知 (Email)                             │  │
+          │  └──────────────┬──────────────────────────────────┘  │
+          │                 │                                      │
+          │  ┌──────────────▼──────────────────────────────────┐  │
+          │  │  Report Generator (Model / View 分離)            │  │
+          │  │  JSON Model → reports/YYYY-MM-DD/{account}.json  │  │
+          │  │  HTML View  → dashboard/pages/report.html        │  │
+          │  └──────────────┬──────────────────────────────────┘  │
+          │                 │                                      │
+          │  ┌──────────────▼──────────────────────────────────┐  │
+          │  │  Notifier                                        │  │
+          │  │  每日 Email（06:00）+ 即時交易通知               │  │
+          │  │  SMTP via GitHub Actions Secret                  │  │
+          │  └─────────────────────────────────────────────────┘  │
+          └───────────────────────────────────────────────────────┘
+                                  │
+          ┌───────────────────────┴──────────────────────────────┐
+          │              GITHUB PAGES (靜態 Dashboard)            │
+          │                                                        │
+          │  ┌──────────────┐  ┌──────────────┐  ┌────────────┐  │
+          │  │ index.html   │  │ report.html  │  │ history/   │  │
+          │  │ 即時持倉概覽 │  │ 每日報告 View│  │ 歷史報告   │  │
+          │  │ NAV 線圖     │  │ 回撤分析     │  │ 可回查     │  │
+          │  └──────────────┘  └──────────────┘  └────────────┘  │
+          └───────────────────────────────────────────────────────┘
+      </pre>
+    </div>
+
+    <div class="grid-2" style="margin-top:20px">
+      <div class="card">
+        <div class="card-title">GitHub Repo 目錄結構</div>
+        <div class="arch-box" style="font-size:11px">
+          <pre>
+alpaca-autotrade/
+├── .github/
+│   └── workflows/
+│       ├── daily-report.yml      # 每日 06:00 報告
+│       ├── trade-execute.yml     # 交易執行
+│       ├── rebalance.yml         # 再平衡
+│       └── deploy-dashboard.yml  # 推送 Pages
+├── strategies/
+│   ├── toprank_ma_momentum_v2.json  # 預設策略
+│   └── {new_strategy}.json       # 新策略只需加這個
+├── accounts/
+│   └── accounts.json             # 帳戶清單 + 策略指定
+├── src/
+│   ├── account_manager.py
+│   ├── strategy_loader.py
+│   ├── data_pipeline.py
+│   ├── signal_engine.py
+│   ├── execution_engine.py
+│   ├── report_generator.py
+│   ├── notifier.py
+│   └── rebalancer.py
+├── reports/                      # JSON Model (歷史存檔)
+│   └── YYYY-MM-DD/
+│       └── {account_id}.json
+├── dashboard/                    # GitHub Pages
+│   ├── index.html
+│   ├── report.html
+│   ├── js/
+│   └── css/
+└── tests/
+    ├── phase1/ … phase7/
+          </pre>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">帳戶設定格式 (accounts.json)</div>
+        <div class="arch-box" style="font-size:11px">
+          <pre>
+{
+  "accounts": [
+    {
+      "id": "acc_001",
+      "name": "主帳戶",
+      "alpaca_key_secret": "ACC_001_KEY",
+      "alpaca_secret_secret": "ACC_001_SECRET",
+      "paper_trading": false,
+      "active_strategy_id": "toprank_ma_momentum_v2",
+      "strategy_history": [
+        {
+          "strategy_id": "basic_spy_v1",
+          "from": "2024-01-01",
+          "to": "2025-03-01"
+        }
+      ],
+      "watchlist_categories": [
+        "AI_TECH",
+        "BIOTECH",
+        "ENERGY"
+      ],
+      "notify_email": "user@example.com",
+      "rebalance_trigger": {
+        "monthly_first_day": true,
+        "on_new_cash_threshold_pct": 0.05
+      }
+    }
+  ]
+}
+          </pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ STRATEGY JSON SCHEMA ══ -->
+  <section class="section" id="schema">
+    <div class="section-header">
+      <div class="icon-badge ib-orange">&#128196;</div>
+      <h2>策略 JSON Schema（交易策略描述規範）</h2>
+    </div>
+
+    <p style="color:var(--muted);margin-bottom:16px;font-size:13px">
+      參考 <span class="tag tag-yellow">trading_strategy_schema_v2_complete.json</span> ─ 新增策略時只需在 <code style="color:var(--orange)">strategies/</code> 目錄放入新的 JSON 檔，Python 引擎自動載入，<strong>不需修改任何 Python 代碼</strong>。
+    </p>
+
+    <table class="schema-table">
+      <thead>
+        <tr>
+          <th>頂層欄位</th>
+          <th>說明</th>
+          <th>重要子欄位</th>
+          <th>範例值</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="mono">strategy</span></td>
+          <td>策略基本資訊</td>
+          <td><span class="mono-s">id, name, asset_class, market, timeframe, enabled</span></td>
+          <td><span class="tag tag-blue">toprank_ma_momentum_v2</span></td>
+        </tr>
+        <tr>
+          <td><span class="mono">universe</span></td>
+          <td>股票池篩選條件</td>
+          <td><span class="mono-s">exchanges, min_price, min_market_cap, min_avg_volume_20d, exclude_sectors</span></td>
+          <td>NASDAQ/NYSE，市值 ≥ $2B，20日均量 ≥ 1M</td>
+        </tr>
+        <tr>
+          <td><span class="mono">indicators</span></td>
+          <td>技術指標定義清單</td>
+          <td><span class="mono-s">SMA(20/50/100/200), EMA, RSI, MACD, ADX, ATR, BB, OBV, VWAP</span></td>
+          <td>type, source, period, outputs</td>
+        </tr>
+        <tr>
+          <td><span class="mono">derived_factors</span></td>
+          <td>衍生因子（公式計算）</td>
+          <td><span class="mono-s">ma_gap_20, momentum_60d, volume_ratio_20d, atr_pct</span></td>
+          <td><code style="font-size:11px">(close - sma_50) / sma_50</code></td>
+        </tr>
+        <tr>
+          <td><span class="mono">filters</span></td>
+          <td>基本面 &amp; 技術面過濾</td>
+          <td><span class="mono-s">fundamental (ROE, 收入增長, D/E), technical (SMA排列, RSI, ADX)</span></td>
+          <td>AND 邏輯，ROE &gt; 10%，RSI 45–70</td>
+        </tr>
+        <tr>
+          <td><span class="mono">ranking</span></td>
+          <td>加權百分位排名</td>
+          <td><span class="mono-s">factors (11 個), weights, watchlist_top_n=20, buy_top_n=8</span></td>
+          <td>momentum_90d weight=0.18（最高）</td>
+        </tr>
+        <tr>
+          <td><span class="mono">entry_signals</span></td>
+          <td>進場信號（AND 邏輯）</td>
+          <td><span class="mono-s">rank_in_top_n(8), SMA20穿SMA50, MACD&gt;0, 量比&gt;1.2, RSI&lt;70</span></td>
+          <td>五個條件全部成立才進場</td>
+        </tr>
+        <tr>
+          <td><span class="mono">exit_signals</span></td>
+          <td>出場信號（OR 邏輯）</td>
+          <td><span class="mono-s">rank落後, SMA死叉, ATR停損(2x), 追蹤停損(10%), 止盈(25%), 跌破SMA200</span></td>
+          <td>任一條件成立即出場</td>
+        </tr>
+        <tr>
+          <td><span class="mono">portfolio</span></td>
+          <td>部位管理規則</td>
+          <td><span class="mono-s">equal_weight, max_positions=8, target_pct=10%, cash_buffer=10%</span></td>
+          <td>前10檔各10%，整數股，不持分股</td>
+        </tr>
+        <tr>
+          <td><span class="mono">risk_management</span></td>
+          <td>風控參數</td>
+          <td><span class="mono-s">max_daily_loss=3%, max_drawdown=15%, halt_new_entries@10%</span></td>
+          <td>超過回撤上限暫停新進場</td>
+        </tr>
+        <tr>
+          <td><span class="mono">rebalance</span></td>
+          <td>再平衡規則</td>
+          <td><span class="mono-s">frequency=weekly(策略內), 系統層每月初 + 新資金事件</span></td>
+          <td>不每日再平衡以降低交易頻率</td>
+        </tr>
+        <tr>
+          <td><span class="mono">execution</span></td>
+          <td>下單執行設定</td>
+          <td><span class="mono-s">broker=alpaca, order_type=market, 盤後15分鐘, 財報前後不交易</span></td>
+          <td>重試 3 次，退退時間 5 秒</td>
+        </tr>
+        <tr>
+          <td><span class="mono">backtest</span></td>
+          <td>回測設定</td>
+          <td><span class="mono-s">initial_cash=$100k, benchmark=SPY, metrics(11個)</span></td>
+          <td>CAGR, Sharpe, Max Drawdown 等</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ══ TECH STACK ══ -->
+  <section class="section" id="stack">
+    <div class="section-header">
+      <div class="icon-badge ib-teal">&#128736;</div>
+      <h2>技術堆疊</h2>
+    </div>
+    <div class="grid-3">
+      <div class="card">
+        <div class="card-title">核心語言 &amp; 框架</div>
+        <div class="stack-item"><span class="stack-icon">&#128013;</span><div><div class="stack-name">Python 3.11+</div><div class="stack-desc">主語言，所有引擎邏輯</div></div></div>
+        <div class="stack-item"><span class="stack-icon">&#128202;</span><div><div class="stack-name">pandas / numpy</div><div class="stack-desc">資料處理、指標計算</div></div></div>
+        <div class="stack-item"><span class="stack-icon">&#128200;</span><div><div class="stack-name">pandas-ta / TA-Lib</div><div class="stack-desc">技術指標計算庫</div></div></div>
+        <div class="stack-item"><span class="stack-icon">&#128451;</span><div><div class="stack-name">Jinja2</div><div class="stack-desc">HTML 報告模板渲染</div></div></div>
+        <div class="stack-item"><span class="stack-icon">&#9989;</span><div><div class="stack-name">pytest</div><div class="stack-desc">所有階段測試框架</div></div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">外部 API &amp; 資料源</div>
+        <div class="stack-item"><span class="stack-icon">&#128176;</span><div><div class="stack-name">Alpaca Trade API</div><div class="stack-desc">下單 / 帳戶資訊 / 市場資料</div></div></div>
+        <div class="stack-item"><span class="stack-icon">&#128201;</span><div><div class="stack-name">yfinance / FMP API</div><div class="stack-desc">基本面資料（P/E, ROE, 收入成長…）</div></div></div>
+        <div class="stack-item"><span class="stack-icon">&#128269;</span><div><div class="stack-name">Alpaca Market Data</div><div class="stack-desc">OHLCV 歷史 + 即時行情</div></div></div>
+        <div class="stack-item"><span class="stack-icon">&#128231;</span><div><div class="stack-name">SMTP (Gmail / SendGrid)</div><div class="stack-desc">Email 通知，透過 GitHub Secrets 配置</div></div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">雲端基礎設施</div>
+        <div class="stack-item"><span class="stack-icon">&#9881;</span><div><div class="stack-name">GitHub Actions</div><div class="stack-desc">全部排程 + 交易執行，零費用（公開 repo）</div></div></div>
+        <div class="stack-item"><span class="stack-icon">&#127760;</span><div><div class="stack-name">GitHub Pages</div><div class="stack-desc">靜態 Dashboard，不依賴其他服務</div></div></div>
+        <div class="stack-item"><span class="stack-icon">&#128274;</span><div><div class="stack-name">GitHub Secrets</div><div class="stack-desc">API Keys / SMTP 密碼安全儲存</div></div></div>
+        <div class="stack-item"><span class="stack-icon">&#128190;</span><div><div class="stack-name">GitHub Repository</div><div class="stack-desc">歷史報告 JSON 存檔 + 版本控制</div></div></div>
+        <div class="stack-item"><span class="stack-icon">&#128266;</span><div><div class="stack-name">Chart.js / Plotly.js</div><div class="stack-desc">Dashboard 前端圖表（純靜態）</div></div></div>
+      </div>
+    </div>
+  </section>
+
+  <hr />
+
+  <!-- ════════════════════════════════════
+       PHASE 1
+  ════════════════════════════════════ -->
+  <section class="section" id="phase1">
+    <div class="section-header">
+      <div class="icon-badge ib-blue">&#127981;</div>
+      <h2>開發階段詳細計劃</h2>
+    </div>
+
+    <div class="phase ph1">
+      <div class="phase-header">
+        <div class="phase-num">1</div>
+        <div>
+          <h3>基礎建設 &amp; CI/CD 管道</h3>
+          <div class="badge-row">
+            <span class="tag tag-blue">GitHub Actions</span>
+            <span class="tag tag-blue">Alpaca 連線驗證</span>
+            <span class="tag tag-blue">多帳戶框架</span>
+            <span class="tag tag-blue">Secrets 管理</span>
+          </div>
+        </div>
+        <div style="margin-left:auto;text-align:right;flex-shrink:0">
+          <div style="font-size:13px;font-weight:600;color:var(--blue)">預估工期</div>
+          <div style="font-size:20px;font-weight:700">2 週</div>
+        </div>
+      </div>
+      <div class="phase-body">
+        <div class="phase-meta">
+          <span>&#128197; Week 1–2</span>
+          <span>&#127981; 目標：建立可運行的雲端骨架，通過所有測試後才進 Phase 2</span>
+        </div>
+
+        <div class="two-col">
+          <div>
+            <div class="sub-section">
+              <div class="sub-title">&#128218; 交付物</div>
+              <ul class="plain">
+                <li>GitHub Repo 初始化，目錄結構建立完成</li>
+                <li>accounts.json 多帳戶設定格式定義</li>
+                <li>GitHub Secrets 設定腳本（API keys, SMTP）</li>
+                <li>AccountManager 類別 — 讀取帳戶、驗證連線</li>
+                <li>StrategyLoader 類別 — 讀取 JSON、Schema 驗證</li>
+                <li>基本 GitHub Actions workflow（手動觸發測試）</li>
+                <li>Alpaca sandbox 連線健康檢查（paper trading）</li>
+              </ul>
+            </div>
+          </div>
+          <div>
+            <div class="sub-section">
+              <div class="sub-title">&#128203; GitHub Workflow 骨架</div>
+              <div class="arch-box" style="font-size:11px">
+                <pre>
+# trade-execute.yml
+on:
+  schedule:
+    - cron: '30 14 * * 1-5'  # 09:30 ET
+  workflow_dispatch:
+jobs:
+  run-all-accounts:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        account: [acc_001, acc_002]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Execute strategy
+        env:
+          ALPACA_KEY: ${{secrets[format('{0}_KEY',
+                        matrix.account)]}}
+        run: python src/main.py
+               --account ${{matrix.account}}
+                </pre>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="sub-section">
+          <div class="sub-title">&#9989; Test Cases — Phase 1</div>
+          <div class="test-grid">
+            <div class="test-item">
+              <div class="tc-id">TC-1-01</div>
+              <div class="tc-name">多帳戶載入</div>
+              <div class="tc-desc">accounts.json 含 3 個帳戶，AccountManager 正確載入全部，缺欄位時拋 ValidationError</div>
+            </div>
+            <div class="test-item">
+              <div class="tc-id">TC-1-02</div>
+              <div class="tc-name">策略 JSON Schema 驗證</div>
+              <div class="tc-desc">合法 JSON 載入成功；必填欄位缺失時拋 SchemaError；enabled=false 的策略不被選用</div>
+            </div>
+            <div class="test-item">
+              <div class="tc-id">TC-1-03</div>
+              <div class="tc-name">Alpaca 連線健康</div>
+              <div class="tc-desc">paper trading 帳戶 GET /v2/account 回 200；錯誤 key 拋 AuthError 且不繼續執行</div>
+            </div>
+            <div class="test-item">
+              <div class="tc-id">TC-1-04</div>
+              <div class="tc-name">同帳戶僅一策略</div>
+              <div class="tc-desc">帳戶同時出現兩個 active 策略時拋 ConfigError；切換策略後舊策略記錄入 strategy_history</div>
+            </div>
+            <div class="test-item">
+              <div class="tc-id">TC-1-05</div>
+              <div class="tc-name">GitHub Actions 手動觸發</div>
+              <div class="tc-desc">workflow_dispatch 觸發後 job 執行完畢 exit code 0，Secrets 正確注入環境變數</div>
+            </div>
+            <div class="test-item">
+              <div class="tc-id">TC-1-06</div>
+              <div class="tc-name">Secrets 不洩漏至日誌</div>
+              <div class="tc-desc">Actions log 中確認 API Key 被遮罩（***），不出現明文</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ PHASE 2 ══ -->
+    <div class="phase ph2" id="phase2">
+      <div class="phase-header">
+        <div class="phase-num">2</div>
+        <div>
+          <h3>資料管線 &amp; 技術指標引擎</h3>
+          <div class="badge-row">
+            <span class="tag tag-green">Alpaca Market Data</span>
+            <span class="tag tag-green">yfinance 基本面</span>
+            <span class="tag tag-green">指標計算</span>
+            <span class="tag tag-green">P/E Ratio</span>
+          </div>
+        </div>
+        <div style="margin-left:auto;text-align:right;flex-shrink:0">
+          <div style="font-size:13px;font-weight:600;color:var(--green)">預估工期</div>
+          <div style="font-size:20px;font-weight:700">2 週</div>
+        </div>
+      </div>
+      <div class="phase-body">
+        <div class="phase-meta">
+          <span>&#128197; Week 3–4</span>
+          <span>&#128203; 依賴 Phase 1 通過</span>
+        </div>
+        <div class="two-col">
+          <div>
+            <div class="sub-section">
+              <div class="sub-title">&#128218; 交付物</div>
+              <ul class="plain">
+                <li>DataPipeline — OHLCV 拉取（Alpaca）、基本面（yfinance / FMP）</li>
+                <li>IndicatorEngine — 依 JSON indicators 動態計算指標</li>
+                <li>DerivedFactorEngine — 依 JSON derived_factors 公式計算</li>
+                <li>每日個股 P/E Ratio 計算（pe_ratio = price / eps_ttm）</li>
+                <li>NASDAQ Top-10 市值排名日報資料源</li>
+                <li>資料快取機制（避免重複 API 呼叫）</li>
+                <li>Universe 篩選器（市值、價格、成交量、排除行業）</li>
+              </ul>
+            </div>
+          </div>
+          <div>
+            <div class="sub-section">
+              <div class="sub-title">&#128202; 指標對應策略 JSON</div>
+              <ul class="plain">
+                <li>SMA 20/50/100/200 → 趨勢過濾、Golden Cross</li>
+                <li>RSI 14 → 過濾超買（&gt;70）、確認入場區間（45-70）</li>
+                <li>MACD(12,26,9) → 動能確認，histogram &gt; 0</li>
+                <li>ADX 14 → 趨勢強度（&gt;20 才入場）</li>
+                <li>ATR 14 → 停損計算、波動率過濾</li>
+                <li>BB(20,2) → 布林帶位置因子</li>
+                <li>OBV, VWAP → 量能確認</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div class="sub-section">
+          <div class="sub-title">&#9989; Test Cases — Phase 2</div>
+          <div class="test-grid">
+            <div class="test-item">
+              <div class="tc-id">TC-2-01</div>
+              <div class="tc-name">OHLCV 拉取完整性</div>
+              <div class="tc-desc">拉取 AAPL 過去 260 天資料，欄位齊全（open/high/low/close/volume），無 NaN 缺漏</div>
+            </div>
+            <div class="test-item">
+              <div class="tc-id">TC-2-02</div>
+              <div class="tc-name">指標計算正確性</div>
+              <div class="tc-desc">SMA20 值與 pandas rolling(20).mean() 比對誤差 &lt; 0.01%；RSI 值在 0–100 範圍</div>
+            </div>
+            <div class="test-item">
+              <div class="tc-id">TC-2-03</div>
+              <div class="tc-name">動態指標載入</div>
+              <div class="tc-desc">策略 JSON 新增 indicators 項目後，IndicatorEngine 自動計算，不需修改 Python</div>
+            </div>
+            <div class="test-item">
+              <div class="tc-id">TC-2-04</div>
+              <div class="tc-name">P/E Ratio 計算</div>
+              <div class="tc-desc">EPS ≤ 0 時 P/E 標記為 N/A；AAPL P/E 與 yfinance 比對誤差 &lt; 5%</div>
+            </div>
+            <div class="test-item">
+              <div class="tc-id">TC-2-05</div>
+              <div class="tc-name">Universe 篩選</div>
+              <div class="tc-desc">市值 &lt; $2B 或日均量 &lt; 1M 的股票被排除；金融、公用事業行業被排除</div>
+            </div>
+            <div class="test-item">
+              <div class="tc-id">TC-2-06</div>
+              <div class="tc-name">資料快取</div>
+              <div class="tc-desc">同日第二次拉取使用快取，API 呼叫次數不增加；快取過期後強制刷新</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ PHASE 3 ══ -->
+    <div class="phase ph3" id="phase3">
+      <div class="phase-header">
+        <div class="phase-num">3</div>
+        <div>
+          <h3>策略引擎 &amp; 信號生成</h3>
+          <div class="badge-row">
+            <span class="tag tag-yellow">Filter Engine</span>
+            <span class="tag tag-yellow">Ranking Engine</span>
+            <span class="tag tag-yellow">Entry / Exit Signal</span>
+            <span class="tag tag-yellow">Top-10 預測</span>
+          </div>
+        </div>
+        <div style="margin-left:auto;text-align:right;flex-shrink:0">
+          <div style="font-size:13px;font-weight:600;color:var(--yellow)">預估工期</div>
+          <div style="font-size:20px;font-weight:700">3 週</div>
+        </div>
+      </div>
+      <div class="phase-body">
+        <div class="phase-meta">
+          <span>&#128197; Week 5–7</span>
+          <span>&#128203; 依賴 Phase 2 通過</span>
+        </div>
+        <div class="two-col">
+          <div>
+            <div class="sub-section">
+              <div class="sub-title">&#128218; 交付物</div>
+              <ul class="plain">
+                <li>FilterEngine — 依 JSON filters 動態執行基本面 + 技術面過濾</li>
+                <li>RankingEngine — 加權百分位分數（cross-sectional percentile）</li>
+                <li>SignalEngine — 進場（AND）/ 出場（OR）信號生成</li>
+                <li>每日 Top-10 最強股票產生（Watchlist 20 → Buy 8）</li>
+                <li>隔日 Top-10 預測報告（基於當日評分排名）</li>
+                <li>Risk Guard — 回撤監控、暫停新進場觸發</li>
+                <li>JSON 報告 Model — signals.json 每日存檔</li>
+              </ul>
+            </div>
+          </div>
+          <div>
+            <div class="sub-section">
+              <div class="sub-title">&#127919; 排名因子權重（來自策略 JSON）</div>
+              <ul class="plain">
+                <li>momentum_90d (18%) — 90 日動能最重要</li>
+                <li>ma_gap_50 (12%) — 與50日均線距離</li>
+                <li>ma_slope_20_5d (10%) — 均線斜率</li>
+                <li>roe (8%) + revenue_growth (8%) — 基本面</li>
+                <li>macd_histogram (8%) + adx_14 (8%) — 技術確認</li>
+                <li>momentum_60d (8%) — 中期動能</li>
+                <li>volume_ratio_20d (7%) — 量能確認</li>
+                <li>pe_ratio (5%, asc) — 本益比越低越佳</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div class="sub-section">
+          <div class="sub-title">&#9989; Test Cases — Phase 3</div>
+          <div class="test-grid">
+            <div class="test-item">
+              <div class="tc-id">TC-3-01</div>
+              <div class="tc-name">動態過濾器執行</div>
+              <div class="tc-desc">新增 JSON filter 條件後自動生效；ROE &lt; 10% 的股票被排除；AND 邏輯所有條件需同時滿足</div>
+            </div>
+            <div class="test-item">
+              <div class="tc-id">TC-3-02</div>
+              <div class="tc-name">排名一致性</div>
+              <div class="tc-desc">相同輸入資料每次排名結果一致；權重總和 = 1.0 驗證；Tie-breaker 按 JSON 定義順序執行</div>
+            </div>
+            <div class="test-item">
+              <div class="tc-id">TC-3-03</div>
+              <div class="tc-name">進場信號 AND 邏輯</div>
+              <div class="tc-desc">5 個進場條件缺少任一時不觸發買入信號；全部滿足時正確觸發</div>
+            </div>
+            <div class="test-item">
+              <div class="tc-id">TC-3-04</div>
+              <div class="tc-name">出場信號 OR 邏輯</div>
+              <div class="tc-desc">停損/止盈/排名下降任一觸發即產生賣出信號；多條件同時觸發只產生一筆賣出</div>
+            </div>
+            <div class="test-item">
+              <div class="tc-id">TC-3-05</div>
+              <div class="tc-name">Risk Guard 暫停</div>
+              <div class="tc-desc">組合回撤達 10% 時新進場被暫停；新進場信號記錄為 BLOCKED 而非執行</div>
+            </div>
+            <div class="test-item">
+              <div class="tc-id">TC-3-06</div>
+              <div class="tc-name">Top-10 輸出</div>
+              <div class="tc-desc">每日輸出恰好 10 檔（不足時填 N/A）；輸出 JSON 包含 ticker, score, rank, pe_ratio</div>
+            </div>
+            <div class="test-item">
+              <div class="tc-id">TC-3-07</div>
+              <div class="tc-name">新策略 JSON 無需修改 Python</div>
+              <div class="tc-desc">放入新策略 JSON 後，引擎載入並執行新策略的過濾/排名規則，所有 TC-3-01~06 通過</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ PHASE 4 ══ -->
+    <div class="phase ph4" id="phase4">
+      <div class="phase-header">
+        <div class="phase-num">4</div>
+        <div>
+          <h3>自動交易執行 &amp; 再平衡</h3>
+          <div class="badge-row">
+            <span class="tag tag-purple">Alpaca 下單</span>
+            <span class="tag tag-purple">整數股</span>
+            <span class="tag tag-purple">再平衡</span>
+            <span class="tag tag-purple">即時通知</span>
+          </div>
+        </div>
+        <div style="margin-left:auto;text-align:right;flex-shrink:0">
+          <div style="font-size:13px;font-weight:600;color:var(--purple)">預估工期</div>
+          <div style="font-size:20px;font-weight:700">2 週</div>
+        </div>
+      </div>
+      <div class="phase-body">
+        <div class="phase-meta">
+          <span>&#128197; Week 8–9</span>
+          <span>&#128203; 依賴 Phase 3 通過</span>
+        </div>
+        <div class="two-col">
+          <div>
+            <div class="sub-section">
+              <div class="sub-title">&#128218; 交付物</div>
+              <ul class="plain">
+                <li>ExecutionEngine — 市價單、整數股計算（floor）、重試 3 次</li>
+                <li>財報前後不交易（earnings_days 緩衝期）</li>
+                <li>Rebalancer — 每月初 + 新資金進入時觸發</li>
+                <li>倉位差異計算（current vs target）</li>
+                <li>即時交易通知 Email（下單成功 / 失敗）</li>
+                <li>GitHub Actions trade-execute.yml 完整版</li>
+                <li>帳戶淨值（NAV）每日計算並存 JSON</li>
+              </ul>
+            </div>
+          </div>
+          <div>
+            <div class="sub-section">
+              <div class="sub-title">&#127968; 再平衡規則</div>
+              <ul class="plain">
+                <li>每月 1 日 09:45 ET 執行（GitHub Actions cron）</li>
+                <li>新資金進入使現金比例 &gt; 5% 時觸發</li>
+                <li>不進行每日再平衡（減少交易）</li>
+                <li>每檔目標 10%，只買整數股（math.floor）</li>
+                <li>最大換手率 50% / 次（避免過度調整）</li>
+                <li>扇形最大 30% 行業集中度限制</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div class="sub-section">
+          <div class="sub-title">&#9989; Test Cases — Phase 4</div>
+          <div class="test-grid">
+            <div class="test-item">
+              <div class="tc-id">TC-4-01</div>
+              <div class="tc-name">整數股計算</div>
+              <div class="tc-desc">$10,000 資金 / $327.50 股價 = floor(30.53) = 30 股；邊界值（剛好整數）亦正確</div>
+            </div>
+            <div class="test-item">
+              <div class="tc-id">TC-4-02</div>
+              <div class="tc-name">10% 持倉上限</div>
+              <div class="tc-desc">NAV=$100k，單股最大 $15k（15% 上限），目標 10%；計算結果驗證</div>
+            </div>
+            <div class="test-item">
+              <div class="tc-id">TC-4-03</div>
+              <div class="tc-name">Paper Trading 下單</div>
+              <div class="tc-desc">買入信號觸發後 paper 帳戶持倉增加；賣出後持倉歸零；訂單 ID 正確記錄</div>
+            </div>
+            <div class="test-item">
+              <div class="tc-id">TC-4-04</div>
+              <div class="tc-name">下單重試機制</div>
+              <div class="tc-desc">第一次失敗後 5 秒重試，最多 3 次；3 次失敗後記錄 ERROR 並發送失敗通知 Email</div>
+            </div>
+            <div class="test-item">
+              <div class="tc-id">TC-4-05</div>
+              <div class="tc-name">月初再平衡觸發</div>
+              <div class="tc-desc">模擬日期 = 每月 1 日，rebalancer 執行；非月初不執行再平衡</div>
+            </div>
+            <div class="test-item">
+              <div class="tc-id">TC-4-06</div>
+              <div class="tc-name">新資金再平衡觸發</div>
+              <div class="tc-desc">現金比例從 10% 增加到 16%（超過 5% 門檻），自動觸發再平衡</div>
+            </div>
+            <div class="test-item">
+              <div class="tc-id">TC-4-07</div>
+              <div class="tc-name">即時交易 Email</div>
+              <div class="tc-desc">下單成功後 60 秒內收到 Email；內容含 ticker, 方向, 數量, 價格, 帳戶名稱</div>
+            </div>
+            <div class="test-item">
+              <div class="tc-id">TC-4-08</div>
+              <div class="tc-name">多帳戶並行安全</div>
+              <div class="tc-desc">兩帳戶同時執行，各自 API Key 互不干擾，訂單不交叉</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ PHASE 5 ══ -->
+    <div class="phase ph5" id="phase5">
+      <div class="phase-header">
+        <div class="phase-num">5</div>
+        <div>
+          <h3>報告系統（Model/View 分離）</h3>
+          <div class="badge-row">
+            <span class="tag tag-orange">JSON Model</span>
+            <span class="tag tag-orange">HTML View</span>
+            <span class="tag tag-orange">歷史存檔</span>
+            <span class="tag tag-orange">Email 日報</span>
+          </div>
+        </div>
+        <div style="margin-left:auto;text-align:right;flex-shrink:0">
+          <div style="font-size:13px;font-weight:600;color:var(--orange)">預估工期</div>
+          <div style="font-size:20px;font-weight:700">2 週</div>
+        </div>
+      </div>
+      <div class="phase-body">
+        <div class="phase-meta">
+          <span>&#128197; Week 10–11</span>
+          <span>&#128203; 依賴 Phase 4 通過</span>
+        </div>
+
+        <div class="two-col">
+          <div>
+            <div class="sub-section">
+              <div class="sub-title">&#128218; 交付物</div>
+              <ul class="plain">
+                <li>ReportModel — 生成每日 JSON（盈虧、持倉、交易、NAV）</li>
+                <li>ReportView — Jinja2 模板渲染 HTML</li>
+                <li>每日回撤計算 + NAV 歷史序列</li>
+                <li>個股 1d / 1w / 1m 獲利百分比</li>
+                <li>Email 日報模板（含 Top-10 + 三大類別 + P/E）</li>
+                <li>歷史報告存入 <code style="color:var(--orange)">reports/YYYY-MM-DD/</code></li>
+                <li>客戶回查 API（依日期讀取歷史 JSON）</li>
+              </ul>
+            </div>
+          </div>
+          <div>
+            <div class="sub-section">
+              <div class="sub-title">&#128196; 日報 JSON Model 結構</div>
+              <div class="arch-box" style="font-size:10px">
+                <pre>
+{
+  "date": "2025-06-01",
+  "account_id": "acc_001",
+  "nav": 105230.50,
+  "cash": 12000.00,
+  "daily_pnl_pct": 0.0123,
+  "drawdown_pct": -0.034,
+  "top10": [
+    {"ticker":"NVDA","rank":1,"score":92.3,
+     "pe":45.2,"pnl_1d":2.1,"pnl_1w":8.3,
+     "pnl_1m":22.1}
+  ],
+  "holdings": [...],
+  "trades_today": [...],
+  "nasdaq_top10_by_mktcap": [...],
+  "watchlist_categories": {
+    "AI_TECH": [...],
+    "BIOTECH": [...],
+    "ENERGY": [...]
+  },
+  "benchmark": {
+    "nasdaq_daily_pct": 0.008,
+    "sp500_daily_pct": 0.005
+  }
+}
+                </pre>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="sub-section">
+          <div class="sub-title">&#9989; Test Cases — Phase 5</div>
+          <div class="test-grid">
+            <div class="test-item">
+              <div class="tc-id">TC-5-01</div>
+              <div class="tc-name">JSON Model 完整性</div>
+              <div class="tc-desc">每日報告 JSON 包含所有必填欄位；空持倉日仍生成報告（holdings=[])；NAV 計算正確</div>
+            </div>
+            <div class="test-item">
+              <div class="tc-id">TC-5-02</div>
+              <div class="tc-name">Model/View 分離驗證</div>
+              <div class="tc-desc">修改 HTML 模板不影響 JSON；修改 JSON 結構後重新渲染 HTML 正確反映</div>
+            </div>
+            <div class="test-item">
+              <div class="tc-id">TC-5-03</div>
+              <div class="tc-name">獲利百分比計算</div>
+              <div class="tc-desc">1d/1w/1m 各基準日計算正確；持有不足 7 天時 1w 顯示 N/A</div>
+            </div>
+            <div class="test-item">
+              <div class="tc-id">TC-5-04</div>
+              <div class="tc-name">回撤計算</div>
+              <div class="tc-desc">NAV 從 $100k→$110k→$104.5k，回撤 = -4.09%；最大回撤追蹤正確</div>
+            </div>
+            <div class="test-item">
+              <div class="tc-id">TC-5-05</div>
+              <div class="tc-name">Email 06:00 發送</div>
+              <div class="tc-desc">GitHub Actions cron 觸發，Email 到達時間在 06:00–06:10 ET 之間</div>
+            </div>
+            <div class="test-item">
+              <div class="tc-id">TC-5-06</div>
+              <div class="tc-name">歷史報告回查</div>
+              <div class="tc-desc">指定日期能正確讀取歷史 JSON；不存在的日期回傳 404 而非空資料</div>
+            </div>
+            <div class="test-item">
+              <div class="tc-id">TC-5-07</div>
+              <div class="tc-name">三大類別顯示</div>
+              <div class="tc-desc">watchlist_categories 在 Email 和 Dashboard 均正確顯示；類別可在 accounts.json 設定</div>
+            </div>
+            <div class="test-item">
+              <div class="tc-id">TC-5-08</div>
+              <div class="tc-name">投資風險提示</div>
+              <div class="tc-desc">每份 Email 報告末尾包含風險免責聲明文字</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ PHASE 6 ══ -->
+    <div class="phase ph6" id="phase6">
+      <div class="phase-header">
+        <div class="phase-num">6</div>
+        <div>
+          <h3>GitHub Pages Dashboard</h3>
+          <div class="badge-row">
+            <span class="tag tag-green">靜態 HTML</span>
+            <span class="tag tag-green">Chart.js</span>
+            <span class="tag tag-green">NAV vs Benchmark</span>
+            <span class="tag tag-green">歷史回查</span>
+          </div>
+        </div>
+        <div style="margin-left:auto;text-align:right;flex-shrink:0">
+          <div style="font-size:13px;font-weight:600;color:var(--teal)">預估工期</div>
+          <div style="font-size:20px;font-weight:700">2 週</div>
+        </div>
+      </div>
+      <div class="phase-body">
+        <div class="phase-meta">
+          <span>&#128197; Week 12–13</span>
+          <span>&#128203; 依賴 Phase 5 通過</span>
+        </div>
+
+        <div class="two-col">
+          <div>
+            <div class="sub-section">
+              <div class="sub-title">&#128218; Dashboard 頁面交付物</div>
+              <ul class="plain">
+                <li><strong>index.html</strong> — 主儀錶板（現金水位、持倉清單、NAV 線圖）</li>
+                <li><strong>report.html</strong> — 每日報告 View（盈虧、Top-10、P/E）</li>
+                <li><strong>history.html</strong> — 歷史報告列表（可點擊回查）</li>
+                <li>NAV 線圖含 NASDAQ / S&amp;P500 比對（checkbox 可勾選）</li>
+                <li>回撤圖（underwater chart）</li>
+                <li>Top-10 表格（含評分、動能、P/E）</li>
+                <li>三大關注類別股票區塊</li>
+                <li>自動每日更新（由 Actions 推送新 JSON 觸發）</li>
+              </ul>
+            </div>
+          </div>
+          <div>
+            <div class="sub-section">
+              <div class="sub-title">&#128202; 儀錶板核心元件</div>
+              <ul class="plain">
+                <li><strong>(a)</strong> 現金水位 — 即時數字 + 占 NAV 百分比</li>
+                <li><strong>(b)</strong> 持倉清單 — 代號、股數、成本、市值、損益%</li>
+                <li><strong>(c)</strong> 1d / 1w / 1m 獲利 % — 顏色化顯示（綠/紅）</li>
+                <li>NAV vs NASDAQ vs SP500 折線圖（勾選比對）</li>
+                <li>回撤百分比走勢圖</li>
+                <li>NASDAQ 市值前十分析</li>
+                <li>三大類別監控（AI科技/生技/能源等）</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div class="sub-section">
+          <div class="sub-title">&#9989; Test Cases — Phase 6</div>
+          <div class="test-grid">
+            <div class="test-item">
+              <div class="tc-id">TC-6-01</div>
+              <div class="tc-name">頁面正常載入</div>
+              <div class="tc-desc">index.html 無 console error；所有 JSON 資料正確讀取並渲染；行動裝置版面正常</div>
+            </div>
+            <div class="test-item">
+              <div class="tc-id">TC-6-02</div>
+              <div class="tc-name">NAV 折線圖</div>
+              <div class="tc-desc">勾選 NASDAQ 後折線顯示；取消勾選後隱藏；SP500 同理；不勾選時只顯示 NAV</div>
+            </div>
+            <div class="test-item">
+              <div class="tc-id">TC-6-03</div>
+              <div class="tc-name">現金水位準確性</div>
+              <div class="tc-desc">Dashboard 顯示金額與 Alpaca API 帳戶現金差異 &lt; $1（浮點誤差）</div>
+            </div>
+            <div class="test-item">
+              <div class="tc-id">TC-6-04</div>
+              <div class="tc-name">歷史報告回查</div>
+              <div class="tc-desc">history.html 列出過去 30 天報告連結；點擊後正確載入對應 JSON 的 View</div>
+            </div>
+            <div class="test-item">
+              <div class="tc-id">TC-6-05</div>
+              <div class="tc-name">每日自動更新</div>
+              <div class="tc-desc">Actions 推送新 JSON 後，Dashboard 在下次載入時顯示最新資料（無需手動部署）</div>
+            </div>
+            <div class="test-item">
+              <div class="tc-id">TC-6-06</div>
+              <div class="tc-name">零外部服務依賴</div>
+              <div class="tc-desc">關閉所有外部 CDN 後，Dashboard 核心功能仍正常（Chart.js/CSS 本地化）</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ PHASE 7 ══ -->
+    <div class="phase ph7" id="phase7">
+      <div class="phase-header">
+        <div class="phase-num">7</div>
+        <div>
+          <h3>整合測試、上線 &amp; 文件</h3>
+          <div class="badge-row">
+            <span class="tag tag-red">End-to-End Test</span>
+            <span class="tag tag-red">Live Trading</span>
+            <span class="tag tag-red">Memory 文件</span>
+            <span class="tag tag-red">Runbook</span>
+          </div>
+        </div>
+        <div style="margin-left:auto;text-align:right;flex-shrink:0">
+          <div style="font-size:13px;font-weight:600;color:var(--red)">預估工期</div>
+          <div style="font-size:20px;font-weight:700">2 週</div>
+        </div>
+      </div>
+      <div class="phase-body">
+        <div class="phase-meta">
+          <span>&#128197; Week 14–15</span>
+          <span>&#128203; 依賴 Phase 6 通過</span>
+        </div>
+
+        <div class="two-col">
+          <div>
+            <div class="sub-section">
+              <div class="sub-title">&#128218; 交付物</div>
+              <ul class="plain">
+                <li>End-to-End 整合測試腳本（Paper → Report → Email → Dashboard）</li>
+                <li>Live Trading 切換（paper_trading: false）驗證清單</li>
+                <li>CLAUDE.md — 專案記憶文件（架構、決策、快速上手）</li>
+                <li>策略新增 Runbook（新 JSON 從模板到上線步驟）</li>
+                <li>帳戶新增 Runbook（accounts.json + Secrets 設定）</li>
+                <li>監控告警：Actions 失敗時 Email 通知開發者</li>
+                <li>GitHub Pages 自訂 domain（選用）</li>
+              </ul>
+            </div>
+          </div>
+          <div>
+            <div class="sub-section">
+              <div class="sub-title">&#128196; CLAUDE.md 記憶文件結構</div>
+              <ul class="plain">
+                <li>系統架構一頁總覽（含資料流向）</li>
+                <li>策略 JSON Schema 說明 + 範例</li>
+                <li>帳戶設定說明 + Secrets 命名規則</li>
+                <li>GitHub Actions workflows 說明</li>
+                <li>重要設計決策記錄（Why we chose X over Y）</li>
+                <li>常見問題排查指南</li>
+                <li>下一步開發 Roadmap</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div class="sub-section">
+          <div class="sub-title">&#9989; Test Cases — Phase 7</div>
+          <div class="test-grid">
+            <div class="test-item">
+              <div class="tc-id">TC-7-01</div>
+              <div class="tc-name">E2E 完整流程</div>
+              <div class="tc-desc">從 Actions 觸發 → 信號生成 → Paper 下單 → JSON 報告 → GitHub Pages 更新 → Email 送達，全程無人工介入</div>
+            </div>
+            <div class="test-item">
+              <div class="tc-id">TC-7-02</div>
+              <div class="tc-name">多帳戶 E2E</div>
+              <div class="tc-desc">兩個帳戶使用不同策略，Actions 走完後各自報告正確，互不干擾</div>
+            </div>
+            <div class="test-item">
+              <div class="tc-id">TC-7-03</div>
+              <div class="tc-name">新策略上線</div>
+              <div class="tc-desc">依 Runbook 新增策略 JSON，帳戶切換策略，下一個 Actions 執行使用新策略</div>
+            </div>
+            <div class="test-item">
+              <div class="tc-id">TC-7-04</div>
+              <div class="tc-name">Actions 失敗通知</div>
+              <div class="tc-desc">人工製造 Python Exception，確認開發者收到 Actions failure Email</div>
+            </div>
+            <div class="test-item">
+              <div class="tc-id">TC-7-05</div>
+              <div class="tc-name">7 天 Paper 觀察</div>
+              <div class="tc-desc">連續 5 個交易日 paper 執行正常，每日報告 / Email / Dashboard 均正確</div>
+            </div>
+            <div class="test-item">
+              <div class="tc-id">TC-7-06</div>
+              <div class="tc-name">CLAUDE.md 完整性</div>
+              <div class="tc-desc">新開發者依 CLAUDE.md 完成「新增帳戶」流程，不需詢問原開發者</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ TIMELINE ══ -->
+  <section class="section" id="timeline">
+    <div class="section-header">
+      <div class="icon-badge ib-blue">&#128197;</div>
+      <h2>開發時程總覽</h2>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">里程碑</div>
+        <div class="timeline">
+          <div class="tl-item">
+            <div class="tl-dot" style="background:var(--blue)"></div>
+            <h4>Week 1–2 &nbsp;<span class="tag tag-blue">Phase 1</span></h4>
+            <p>基礎建設完成、多帳戶框架、Alpaca 連線驗證</p>
+          </div>
+          <div class="tl-item">
+            <div class="tl-dot" style="background:var(--green)"></div>
+            <h4>Week 3–4 &nbsp;<span class="tag tag-green">Phase 2</span></h4>
+            <p>資料管線、技術指標引擎、P/E Ratio 計算</p>
+          </div>
+          <div class="tl-item">
+            <div class="tl-dot" style="background:var(--yellow)"></div>
+            <h4>Week 5–7 &nbsp;<span class="tag tag-yellow">Phase 3</span></h4>
+            <p>策略引擎、排名、進出場信號、Top-10 預測</p>
+          </div>
+          <div class="tl-item">
+            <div class="tl-dot" style="background:var(--purple)"></div>
+            <h4>Week 8–9 &nbsp;<span class="tag tag-purple">Phase 4</span></h4>
+            <p>自動下單、整數股、再平衡、即時通知</p>
+          </div>
+          <div class="tl-item">
+            <div class="tl-dot" style="background:var(--orange)"></div>
+            <h4>Week 10–11 &nbsp;<span class="tag tag-orange">Phase 5</span></h4>
+            <p>報告系統（Model/View）、Email 日報、歷史存檔</p>
+          </div>
+          <div class="tl-item">
+            <div class="tl-dot" style="background:var(--teal)"></div>
+            <h4>Week 12–13 &nbsp;<span class="tag tag-green">Phase 6</span></h4>
+            <p>GitHub Pages Dashboard、NAV 圖表、回查介面</p>
+          </div>
+          <div class="tl-item">
+            <div class="tl-dot" style="background:var(--red)"></div>
+            <h4>Week 14–15 &nbsp;<span class="tag tag-red">Phase 7</span></h4>
+            <p>E2E 整合、Live Trading 切換、CLAUDE.md 文件</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Test Cases 總計</div>
+        <table class="schema-table">
+          <thead>
+            <tr><th>Phase</th><th>主題</th><th>TC 數量</th><th>通過才進入</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><span class="tag tag-blue">P1</span></td><td>基礎建設</td><td>6</td><td>Phase 2</td></tr>
+            <tr><td><span class="tag tag-green">P2</span></td><td>資料管線</td><td>6</td><td>Phase 3</td></tr>
+            <tr><td><span class="tag tag-yellow">P3</span></td><td>策略引擎</td><td>7</td><td>Phase 4</td></tr>
+            <tr><td><span class="tag tag-purple">P4</span></td><td>自動交易</td><td>8</td><td>Phase 5</td></tr>
+            <tr><td><span class="tag tag-orange">P5</span></td><td>報告系統</td><td>8</td><td>Phase 6</td></tr>
+            <tr><td><span class="tag tag-green">P6</span></td><td>Dashboard</td><td>6</td><td>Phase 7</td></tr>
+            <tr><td><span class="tag tag-red">P7</span></td><td>整合上線</td><td>6</td><td>正式上線</td></tr>
+            <tr style="font-weight:700"><td colspan="2">總計</td><td>47 個 TC</td><td>全部通過後 Live</td></tr>
+          </tbody>
+        </table>
+
+        <div style="margin-top:16px">
+          <div class="card-title">GitHub Actions Workflows</div>
+          <table class="schema-table">
+            <thead>
+              <tr><th>Workflow 檔案</th><th>觸發時機</th><th>功能</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="mono" style="font-size:11px">daily-report.yml</td>
+                <td>每日 06:00 ET (cron)</td>
+                <td>生成報告 JSON + 發送 Email</td>
+              </tr>
+              <tr>
+                <td class="mono" style="font-size:11px">trade-execute.yml</td>
+                <td>09:30 ET 盤前 (cron)</td>
+                <td>走遍所有帳戶執行交易</td>
+              </tr>
+              <tr>
+                <td class="mono" style="font-size:11px">rebalance.yml</td>
+                <td>每月 1 日 + 手動觸發</td>
+                <td>再平衡計算與執行</td>
+              </tr>
+              <tr>
+                <td class="mono" style="font-size:11px">deploy-dashboard.yml</td>
+                <td>push to main / 每日觸發</td>
+                <td>部署靜態 HTML 至 Pages</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ RISKS ══ -->
+  <section class="section" id="risks">
+    <div class="section-header">
+      <div class="icon-badge ib-red">&#9888;</div>
+      <h2>風險提示 &amp; 限制說明</h2>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">技術風險</div>
+        <ul class="plain">
+          <li>Alpaca API 限速（200 req/min）— 需加入 rate limiter</li>
+          <li>yfinance 基本面資料可能延遲或不完整 — 建議備援 FMP API</li>
+          <li>GitHub Actions 每月免費分鐘數限制（公開 repo 無限制，私有 repo 有限額）</li>
+          <li>市場異常跳空（Gap Down）— 策略 JSON 已含 12% 跳空保護</li>
+          <li>Email SMTP 可能被列為垃圾郵件 — 建議使用 SendGrid 或 SES</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="card-title">投資風險</div>
+        <div class="risk-banner" style="margin-bottom:12px">
+          <span class="ri">⚠️</span>
+          <span>本系統所有功能<strong>僅供資訊整理與研究參考，不構成投資建議</strong>。請務必在充分了解個人風險承受能力後謹慎操作。</span>
+        </div>
+        <ul class="plain">
+          <li>過去回測績效不代表未來實際獲利</li>
+          <li>演算法策略在市場劇烈波動時可能失效</li>
+          <li>本益比（P/E）計算基於歷史 EPS，不反映未來盈利能力</li>
+          <li>系統僅協助資訊整理與可視化，最終投資決策由使用者負責</li>
+          <li>建議先用 Paper Trading 至少一個月再切換 Live</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <div style="border-top:1px solid var(--border);padding-top:20px;color:var(--muted);font-size:12px;text-align:center">
+    <p>Alpaca Auto-Trading System — 開發計劃 v1.0 &nbsp;|&nbsp; 策略 Schema 參考：trading_strategy_schema_v2_complete.json &nbsp;|&nbsp; 所有交易策略均僅供資訊整理與研究參考，不構成投資建議。</p>
+  </div>
+
+</div>
+</body>
+</html>
